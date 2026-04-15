@@ -3,8 +3,8 @@ import casa.*
 describe "casa de pepe y julian" {
 
   // Descomentar si hiciera falta un metodo para inicializar el ambiente
-  // method initialize() {
-  // }
+  method initialize() {
+  }
   test "Movimientos de cuenta corriente y pago de gastos"{
     cuentaCorriente.saldo(0)
     assert.equals(0, cuentaCorriente.saldo())
@@ -40,9 +40,55 @@ describe "casa de pepe y julian" {
     cuentaConGasto.costoOperacion(20)
     assert.equals(20, cuentaConGasto.costoOperacion())
     assert.throwsException({ cuentaConGasto.depositar(10) })
-    cuentaConGasto.saldo(0)
     assert.equals(0, cuentaConGasto.saldo())
-    cuentaConGasto.costoOperacion(20)
     assert.equals(20, cuentaConGasto.costoOperacion())
   }
+  test "Movimientos de cuenta combinada y pago de gastos"{
+    casa.cuenta(cuentaCombinada)
+    cuentaCombinada.cuentaPrimaria(cuentaConGasto)
+    cuentaConGasto.costoOperacion(20)
+    cuentaConGasto.saldo(0)
+    cuentaCombinada.cuentaSecundaria(cuentaCorriente)
+    cuentaCorriente.saldo(300)
+    cuentaCombinada.depositar(100)
+    assert.equals(cuentaCombinada, casa.cuenta())
+    assert.equals(380, cuentaCombinada.saldo())
+    assert.equals(80, cuentaConGasto.saldo())
+    casa.gasto(280)
+    assert.equals(280, casa.gastosMensuales())
+    assert.equals(100, cuentaCombinada.saldo())
+    assert.equals(0, cuentaConGasto.saldo())
+    assert.equals(100, cuentaCorriente.saldo())
+    assert.throwsException({ cuentaCombinada.depositar(10) })
+    assert.equals(100, cuentaCorriente.saldo())
+    assert.throwsException({ casa.gasto(1000) })
+    assert.equals(100, cuentaCorriente.saldo())
+    assert.equals(280, casa.gastosMensuales())
+  }
+  test "Compra de viveres y reparaciones de la casa"{
+    casa.viveres(0.30)
+    casa.reparaciones(0)
+    casa.cuenta(cuentaCorriente)
+    cuentaCorriente.saldo(2000)
+    casa.romperElementosDeCasa(1000)
+    assert.equals(false, casa.hayViveresSuficientes())
+    assert.equals(true, casa.hayReparacionesPendientes())
+    assert.equals(false, casa.casaEnOrden())
+    assert.throwsException({ casa.comprarViveres(0.80, 2) })
+    assert.equals(0.30, casa.viveres())
+    assert.equals(2000, cuentaCorriente.saldo())
+    assert.equals(0, casa.gastosMensuales())
+    casa.comprarViveres(0.20, 2)
+    assert.equals(true, casa.hayViveresSuficientes())
+    assert.equals(0.50, casa.viveres())
+    assert.equals(false, casa.casaEnOrden())
+    assert.equals(1960, cuentaCorriente.saldo())
+    assert.equals(40, casa.gastosMensuales())
+    casa.reparar()
+    assert.equals(false, casa.hayReparacionesPendientes())
+    assert.equals(true, casa.casaEnOrden())
+    assert.equals(960, cuentaCorriente.saldo())
+    assert.equals(1040, casa.gastosMensuales())
+  }
+
 }

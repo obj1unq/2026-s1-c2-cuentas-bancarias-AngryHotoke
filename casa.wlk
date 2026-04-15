@@ -1,13 +1,9 @@
 object casa {
-    var gastosMensuales = 0
-    var cuenta = cuentaCorriente
+    var property gastosMensuales = 0
+    var property cuenta = cuentaCorriente
+    var property viveres = 0
+    var reparaciones = 0
 
-    method cuenta(_cuenta){
-        cuenta = _cuenta
-    }
-    method cuenta(){
-        return cuenta
-    }
     method gasto(monto) {
       cuenta.extraer(monto)
       gastosMensuales = gastosMensuales + monto
@@ -15,41 +11,55 @@ object casa {
     method cambiarMes() {
       gastosMensuales = 0
     }
-    method gastosMensuales() {
-      return gastosMensuales
+    method romperElementosDeCasa(monto){
+      reparaciones += monto
     }
-    method gastosMensuales(_gastosMensuales) {
-      gastosMensuales = _gastosMensuales
+    method reparar() {
+      self.gasto(reparaciones)
+      reparaciones = 0
     }
-}
-object julian {
-}
-object pepe{
+    method reparaciones(_reparaciones) {
+      reparaciones = _reparaciones
+    }
+    method comprarViveres(porcentaje,calidad) {
+      self.verificarCompra(porcentaje)
+      self.gasto(porcentaje * calidad * 100)
+      viveres += porcentaje
+    }
+    method verificarCompra(porcentaje) {
+      if (not self.esCompraValida(porcentaje)){
+        self.error("Porcentaje ingresado invalido. El porcentaje: " + porcentaje +
+        " ingresado supera la capacidad maxima de viveres en la casa")
+      }
+    }
+    method esCompraValida(porcentaje) {
+      return porcentaje + viveres < 1
+    }
+    method hayViveresSuficientes() {
+      return viveres >= 0.40
+    }
+    method hayReparacionesPendientes() {
+      return reparaciones > 0
+    }
+    method casaEnOrden() {
+      return self.hayViveresSuficientes() &&  not self.hayReparacionesPendientes()
+    }
 }
 object cuentaCorriente {
-    var saldo = 0
+    var property saldo = 0
 
-  method saldo() {
-    return saldo
-  }
   method extraer(monto) {
     saldo = saldo - monto
   }
   method depositar(monto) {
     saldo = saldo + monto
   }
-  method saldo(_saldo) {
-    saldo = _saldo
-  }
 
 }
 object cuentaConGasto {
-    var saldo = 0
-    var costoOperacion = 1
+    var property saldo = 0
+    var property costoOperacion = 1
 
-  method saldo() {
-    return saldo
-  }
   method extraer(monto) {
     saldo = saldo - monto
   }
@@ -57,19 +67,45 @@ object cuentaConGasto {
     self.validarDeposito(monto)
     saldo = saldo + monto - costoOperacion
   }
-  method saldo(_saldo) {
-    saldo = _saldo
-  }
+
   method validarDeposito(monto) {
     if(monto <= costoOperacion){
-        self.error("Monto invalido." + monto + "Es menor que el costo de operacion" + costoOperacion)
+        self.error("Monto invalido. El monto: " + monto + " es menor que el costo de operacion" + costoOperacion)
     }
   }
-  method costoOperacion(_costoOperacion) {
-    costoOperacion = _costoOperacion
+
+}
+object cuentaCombinada {
+  var property cuentaPrimaria = null
+  var property cuentaSecundaria = null
+
+  method saldo() {
+    return 0.max(cuentaPrimaria.saldo()) + 0.max(cuentaSecundaria.saldo());
   }
-  method costoOperacion() {
-    return costoOperacion
+  method depositar(monto) {
+    cuentaPrimaria.depositar(monto)
   }
+  method extraer(monto) {
+    self.validarExtraccion(monto)
+    if(monto <= cuentaPrimaria.saldo()){ 
+        cuentaPrimaria.extraer(monto)
+    }else{
+        cuentaSecundaria.extraer(monto - cuentaPrimaria.saldo())
+        cuentaPrimaria.extraer(cuentaPrimaria.saldo())
+    }
+  }
+  method validarExtraccion(monto) {
+    if (not self.esExtraccionPermitida(monto)){
+         self.error("Monto invalido. El monto: " + monto + " supera el saldo de las cuentas conbinadas" )
+    }
+  }
+  method esExtraccionPermitida(monto) {
+    return monto < self.saldo()
+  }
+
+
+
+
+
 
 }
